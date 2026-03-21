@@ -10,6 +10,7 @@ import io.reactivex.rxjava3.core.Single
 import io.reactivex.rxjava3.functions.Consumer
 import io.reactivex.rxjava3.processors.PublishProcessor
 import io.reactivex.rxjava3.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import org.schabi.newpipe.R
@@ -20,6 +21,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.local.subscription.SubscriptionManager
 import org.schabi.newpipe.util.ExtractorHelper.getChannelInfo
 import org.schabi.newpipe.util.ExtractorHelper.getChannelTab
+import org.schabi.newpipe.util.ExtractorHelper.getMoreChannelTabItems
 
 class SuggestionsLoadManager(private val context: Context) {
 
@@ -123,6 +125,7 @@ class SuggestionsLoadManager(private val context: Context) {
                 subscriptionEntity.url,
                 true
             )
+                .timeout(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .onErrorReturn(storeOriginalErrorAndRethrow)
                 .blockingGet()
 
@@ -153,14 +156,35 @@ class SuggestionsLoadManager(private val context: Context) {
                 videosTab,
                 true
             )
+                .timeout(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                 .onErrorReturn(storeOriginalErrorAndRethrow)
                 .blockingGet()
 
             errors.addAll(channelTabInfo.errors)
 
-            val streams = channelTabInfo.relatedItems
-                .filterIsInstance<StreamInfoItem>()
-                .take(VIDEOS_PER_CHANNEL_MAX)
+            val allStreams = mutableListOf<StreamInfoItem>()
+            allStreams.addAll(channelTabInfo.relatedItems.filterIsInstance<StreamInfoItem>())
+
+            val pagesToFetch = (1..10).random()
+            var nextPage = channelTabInfo.nextPage
+            var pagesFetched = 1
+            while (pagesFetched < pagesToFetch && nextPage != null) {
+                val moreItems = getMoreChannelTabItems(
+                    subscriptionEntity.serviceId,
+                    videosTab,
+                    nextPage
+                )
+                    .timeout(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                    .onErrorReturn(storeOriginalErrorAndRethrow)
+                    .blockingGet()
+
+                errors.addAll(moreItems.errors)
+                allStreams.addAll(moreItems.items.filterIsInstance<StreamInfoItem>())
+                nextPage = moreItems.nextPage
+                pagesFetched++
+            }
+
+            val streams = allStreams.shuffled().take(VIDEOS_PER_CHANNEL_MAX)
 
             return Notification.createOnNext(
                 SuggestionsUpdateInfo(
@@ -235,5 +259,6 @@ class SuggestionsLoadManager(private val context: Context) {
         const val MAX_CHANNELS = 50
         const val MAX_VIDEOS = 100
         private const val VIDEOS_PER_CHANNEL_MAX = 10
+        private const val REQUEST_TIMEOUT_SECONDS = 10L
     }
 }
