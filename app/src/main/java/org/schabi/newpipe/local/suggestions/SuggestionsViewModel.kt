@@ -1,0 +1,80 @@
+package org.schabi.newpipe.local.suggestions
+
+import android.app.Application
+import android.content.Context
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.schedulers.Schedulers
+import java.util.concurrent.TimeUnit
+import org.schabi.newpipe.App
+import org.schabi.newpipe.database.stream.StreamWithState
+import org.schabi.newpipe.local.feed.FeedDatabaseManager
+import org.schabi.newpipe.local.feed.item.StreamItem
+import org.schabi.newpipe.local.suggestions.SuggestionsEventManager.Event.ErrorResultEvent
+import org.schabi.newpipe.local.suggestions.SuggestionsEventManager.Event.IdleEvent
+import org.schabi.newpipe.local.suggestions.SuggestionsEventManager.Event.ProgressEvent
+import org.schabi.newpipe.local.suggestions.SuggestionsEventManager.Event.SuccessResultEvent
+import org.schabi.newpipe.util.DEFAULT_THROTTLE_TIMEOUT
+
+class SuggestionsViewModel(
+    private val application: Application
+) : ViewModel() {
+    private val feedDatabaseManager = FeedDatabaseManager(application)
+
+    private val mutableStateLiveData = MutableLiveData<SuggestionsState>()
+    val stateLiveData: LiveData<SuggestionsState> = mutableStateLiveData
+
+    private var combineDisposable = SuggestionsEventManager.events()
+        .throttleLatest(DEFAULT_THROTTLE_TIMEOUT, TimeUnit.MILLISECONDS)
+        .subscribeOn(Schedulers.io())
+        .observeOn(Schedulers.io())
+        .map { event ->
+            val streamItems = if (event is SuccessResultEvent || event is IdleEvent) {
+                feedDatabaseManager
+                    .getStreams(
+                        org.schabi.newpipe.database.feed.model.FeedGroupEntity.GROUP_ALL_ID,
+                        true,
+                        true,
+                        true
+                    )
+                    .blockingGet(arrayListOf())
+            } else {
+                arrayListOf()
+            }
+
+            Pair(event, streamItems)
+        }
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe { (event, streamWithStates) ->
+            val items = streamWithStates.map { e -> StreamItem(e) }
+            mutableStateLiveData.postValue(
+                when (event) {
+                    is IdleEvent -> SuggestionsState.LoadedState(items)
+                    is ProgressEvent -> SuggestionsState.ProgressState(event.currentProgress, event.maxProgress, event.progressMessage)
+                    is SuccessResultEvent -> SuggestionsState.LoadedState(items)
+                    is ErrorResultEvent -> SuggestionsState.ErrorState(event.error)
+                }
+            )
+
+            if (event is ErrorResultEvent || event is SuccessResultEvent) {
+                SuggestionsEventManager.reset()
+            }
+        }
+
+    override fun onCleared() {
+        super.onCleared()
+        combineDisposable.dispose()
+    }
+
+    companion object {
+        fun getFactory(context: Context) = viewModelFactory {
+            initializer {
+                SuggestionsViewModel(App.instance)
+            }
+        }
+    }
+}
