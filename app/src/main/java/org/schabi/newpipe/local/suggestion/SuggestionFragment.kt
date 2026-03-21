@@ -5,7 +5,6 @@
 
 package org.schabi.newpipe.local.suggestion
 
-import android.app.Activity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -20,7 +19,6 @@ import org.schabi.newpipe.error.ErrorUtil
 import org.schabi.newpipe.error.UserAction
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.info_list.InfoListAdapter
-import org.schabi.newpipe.info_list.dialog.InfoItemDialog
 import org.schabi.newpipe.util.NavigationHelper
 import org.schabi.newpipe.util.OnClickGesture
 import org.schabi.newpipe.util.ThemeHelper.getGridSpanCountStreams
@@ -138,7 +136,7 @@ class SuggestionFragment : Fragment() {
             this,
             ErrorInfo(
                 state.error ?: Exception("Unknown error"),
-                UserAction.REQUESTED_FEED,
+                UserAction.REQUESTED_STREAM,
                 "Loading suggestions"
             )
         )
@@ -164,14 +162,6 @@ class SuggestionFragment : Fragment() {
             null,
             false
         )
-    }
-
-    private fun showInfoDialog(item: StreamInfoItem) {
-        try {
-            InfoItemDialog.Builder(activity as Activity, requireContext(), this, item).create().show()
-        } catch (e: IllegalArgumentException) {
-            // Ignore
-        }
     }
 
     override fun onDestroyView() {
