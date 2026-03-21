@@ -155,7 +155,7 @@ class SuggestionFragment : Fragment() {
     private fun openVideo(item: StreamInfoItem) {
         NavigationHelper.openVideoDetailFragment(
             requireContext(),
-            childFragmentManager,
+            parentFragmentManager,
             item.serviceId,
             item.url,
             item.name,
