@@ -29,7 +29,6 @@ class SuggestionsLoadManager(private val context: Context) {
     private val currentProgress = AtomicInteger(-1)
     private val maxProgress = AtomicInteger(-1)
     private val cancelSignal = AtomicBoolean()
-    private val suggestionsResultsHolder = SuggestionsResultsHolder()
 
     val notification: Flowable<SuggestionsLoadState> = notificationUpdater.map { description ->
         SuggestionsLoadState(description, maxProgress.get(), currentProgress.get())
@@ -84,7 +83,7 @@ class SuggestionsLoadManager(private val context: Context) {
             }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSuccess {
-                SuggestionsEventManager.postEvent(SuggestionsEventManager.Event.SuccessResultEvent(suggestionsResultsHolder.itemsErrors))
+                SuggestionsEventManager.postEvent(SuggestionsEventManager.Event.SuccessResultEvent(SuggestionsResultsHolder.itemsErrors))
             }
             .observeOn(Schedulers.io())
             .doOnDispose {
@@ -176,7 +175,7 @@ class SuggestionsLoadManager(private val context: Context) {
                 request,
                 error ?: e
             )
-            suggestionsResultsHolder.addError(wrapper)
+            SuggestionsResultsHolder.addError(wrapper)
             return Notification.createOnError(wrapper)
         }
     }
@@ -192,7 +191,7 @@ class SuggestionsLoadManager(private val context: Context) {
                 allVideos.addAll(updateInfo.streams)
 
                 if (updateInfo.errors.isNotEmpty()) {
-                    suggestionsResultsHolder.addErrors(
+                    SuggestionsResultsHolder.addErrors(
                         updateInfo.errors.map { err ->
                             SuggestionsLoadService.RequestException(
                                 updateInfo.uid,
@@ -203,7 +202,7 @@ class SuggestionsLoadManager(private val context: Context) {
                     )
                 }
             } else if (notification.isOnError) {
-                suggestionsResultsHolder.addError(notification.error!!)
+                SuggestionsResultsHolder.addError(notification.error!!)
             }
         }
 
@@ -213,7 +212,9 @@ class SuggestionsLoadManager(private val context: Context) {
             allVideos
         }
 
-        return Single.just(cappedVideos.shuffled())
+        val shuffledVideos = cappedVideos.shuffled()
+        SuggestionsResultsHolder.setLoadedItems(shuffledVideos)
+        return Single.just(shuffledVideos)
     }
 
     private inner class NotificationConsumer : Consumer<Notification<SuggestionsUpdateInfo>> {

@@ -12,7 +12,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
 import org.schabi.newpipe.App
 import org.schabi.newpipe.database.stream.StreamWithState
-import org.schabi.newpipe.local.feed.FeedDatabaseManager
+import org.schabi.newpipe.database.stream.model.StreamEntity
 import org.schabi.newpipe.local.feed.item.StreamItem
 import org.schabi.newpipe.local.suggestions.SuggestionsEventManager.Event.ErrorResultEvent
 import org.schabi.newpipe.local.suggestions.SuggestionsEventManager.Event.IdleEvent
@@ -23,8 +23,6 @@ import org.schabi.newpipe.util.DEFAULT_THROTTLE_TIMEOUT
 class SuggestionsViewModel(
     private val application: Application
 ) : ViewModel() {
-    private val feedDatabaseManager = FeedDatabaseManager(application)
-
     private val mutableStateLiveData = MutableLiveData<SuggestionsState>()
     val stateLiveData: LiveData<SuggestionsState> = mutableStateLiveData
 
@@ -33,24 +31,21 @@ class SuggestionsViewModel(
         .subscribeOn(Schedulers.io())
         .observeOn(Schedulers.io())
         .map { event ->
-            val streamItems = if (event is SuccessResultEvent || event is IdleEvent) {
-                feedDatabaseManager
-                    .getStreams(
-                        org.schabi.newpipe.database.feed.model.FeedGroupEntity.GROUP_ALL_ID,
-                        true,
-                        true,
-                        true
-                    )
-                    .blockingGet(arrayListOf())
+            val loadedItems = if (event is SuccessResultEvent || event is IdleEvent) {
+                SuggestionsResultsHolder.getLoadedItems()
             } else {
-                arrayListOf()
+                emptyList()
             }
 
-            Pair(event, streamItems)
+            Pair(event, loadedItems)
         }
         .observeOn(AndroidSchedulers.mainThread())
-        .subscribe { (event, streamWithStates) ->
-            val items = streamWithStates.map { e -> StreamItem(e) }
+        .subscribe { (event, loadedItems) ->
+            val items = loadedItems.map { streamInfoItem ->
+                StreamItem(
+                    StreamWithState(StreamEntity(streamInfoItem), null)
+                )
+            }
             mutableStateLiveData.postValue(
                 when (event) {
                     is IdleEvent -> SuggestionsState.LoadedState(items)
