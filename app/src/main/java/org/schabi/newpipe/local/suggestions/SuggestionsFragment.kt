@@ -68,6 +68,7 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
     private lateinit var groupAdapter: GroupieAdapter
 
     private var isRefreshing = false
+    private var channelCount: Int = 0
 
     init {
         setHasOptionsMenu(true)
@@ -240,6 +241,8 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
     }
 
     private fun handleLoadedState(loadedState: SuggestionsState.LoadedState) {
+        channelCount = loadedState.channelCount
+
         val itemVersion = when (getItemViewMode(requireContext())) {
             ItemViewMode.GRID -> StreamItem.ItemVersion.GRID
             ItemViewMode.CARD -> StreamItem.ItemVersion.CARD
@@ -253,6 +256,8 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
             suggestionsBinding.itemsList.layoutManager?.onRestoreInstanceState(listState)
             listState = null
         }
+
+        updateRefreshViewState()
 
         if (loadedState.items.isEmpty()) {
             showEmptyState()
@@ -281,7 +286,7 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
     }
 
     private fun updateRefreshViewState() {
-        suggestionsBinding.refreshText.text = getString(R.string.feed_oldest_subscription_update, "—")
+        suggestionsBinding.refreshText.text = getString(R.string.suggestions_refresh_info, channelCount)
     }
 
     override fun doInitialLoadLogic() {}

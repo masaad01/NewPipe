@@ -54,7 +54,9 @@ class SuggestionsLoadManager(private val context: Context) {
             .map { allSubscriptions ->
                 val shuffled = allSubscriptions.shuffled()
                 val sampleSize = minOf(shuffled.size, MAX_CHANNELS)
-                shuffled.take(sampleSize)
+                val selectedChannels = shuffled.take(sampleSize)
+                SuggestionsResultsHolder.setChannelCount(selectedChannels.size)
+                selectedChannels
             }
             .flatMap { Flowable.fromIterable(it) }
             .takeWhile { !cancelSignal.get() }

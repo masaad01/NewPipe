@@ -8,12 +8,19 @@ object SuggestionsResultsHolder {
 
     private val itemsErrorsHolder: MutableList<Throwable> = ArrayList()
     private var loadedItems: List<StreamInfoItem> = emptyList()
+    private var channelCount: Int = 0
 
     fun setLoadedItems(items: List<StreamInfoItem>) {
         loadedItems = items
     }
 
     fun getLoadedItems(): List<StreamInfoItem> = loadedItems
+
+    fun setChannelCount(count: Int) {
+        channelCount = count
+    }
+
+    fun getChannelCount(): Int = channelCount
 
     fun addError(error: Throwable) {
         itemsErrorsHolder.add(error)
@@ -26,5 +33,6 @@ object SuggestionsResultsHolder {
     fun clear() {
         itemsErrorsHolder.clear()
         loadedItems = emptyList()
+        channelCount = 0
     }
 }

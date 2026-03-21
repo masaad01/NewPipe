@@ -37,10 +37,17 @@ class SuggestionsViewModel(
                 emptyList()
             }
 
-            Pair(event, loadedItems)
+            val channelCount = if (event is SuccessResultEvent || event is IdleEvent) {
+                SuggestionsResultsHolder.getChannelCount()
+            } else {
+                0
+            }
+
+            Pair(event, Pair(loadedItems, channelCount))
         }
         .observeOn(AndroidSchedulers.mainThread())
-        .subscribe { (event, loadedItems) ->
+        .subscribe { (event, data) ->
+            val (loadedItems, channelCount) = data
             val items = loadedItems.map { streamInfoItem ->
                 StreamItem(
                     StreamWithState(StreamEntity(streamInfoItem), null)
@@ -48,9 +55,9 @@ class SuggestionsViewModel(
             }
             mutableStateLiveData.postValue(
                 when (event) {
-                    is IdleEvent -> SuggestionsState.LoadedState(items)
+                    is IdleEvent -> SuggestionsState.LoadedState(items, channelCount)
                     is ProgressEvent -> SuggestionsState.ProgressState(event.currentProgress, event.maxProgress, event.progressMessage)
-                    is SuccessResultEvent -> SuggestionsState.LoadedState(items)
+                    is SuccessResultEvent -> SuggestionsState.LoadedState(items, channelCount)
                     is ErrorResultEvent -> SuggestionsState.ErrorState(event.error)
                 }
             )

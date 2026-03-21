@@ -11,7 +11,8 @@ sealed class SuggestionsState {
     ) : SuggestionsState()
 
     data class LoadedState(
-        val items: List<StreamItem>
+        val items: List<StreamItem>,
+        val channelCount: Int = 0
     ) : SuggestionsState()
 
     data object EmptyState : SuggestionsState()
