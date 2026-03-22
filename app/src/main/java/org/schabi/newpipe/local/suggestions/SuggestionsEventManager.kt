@@ -21,8 +21,8 @@ object SuggestionsEventManager {
 
     fun reset() {
         ignoreUpstream.set(true)
-        postEvent(IdleEvent)
         ignoreUpstream.set(false)
+        postEvent(IdleEvent)
     }
 
     sealed class Event {

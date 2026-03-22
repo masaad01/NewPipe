@@ -93,6 +93,16 @@
         android:gravity="center"
         android:orientation="vertical">
 
+        <org.schabi.newpipe.views.NewPipeTextView
+            android:id="@+id/loading_channel_info_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="Chose 20 out of 60 channels"
+            tools:visibility="visible" />
+
         <ProgressBar
             android:id="@+id/loading_progress_bar"
             style="@style/Widget.AppCompat.ProgressBar.Horizontal"
@@ -113,7 +123,7 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Title"
             android:textSize="16sp"
             android:visibility="gone"
-            tools:text="1/120"
+            tools:text="1/20"
             tools:visibility="visible" />
     </LinearLayout>
 

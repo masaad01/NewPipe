@@ -44,21 +44,23 @@ class SuggestionsLoadManager(private val context: Context) {
             .take(1)
             .doOnNext {
                 currentProgress.set(0)
-                maxProgress.set(it.size)
             }
             .filter { it.isNotEmpty() }
             .observeOn(AndroidSchedulers.mainThread())
             .doOnNext {
                 notificationUpdater.onNext("")
-                broadcastProgress()
             }
             .observeOn(Schedulers.io())
             .map { allSubscriptions ->
                 val shuffled = allSubscriptions.shuffled()
                 val sampleSize = minOf(shuffled.size, MAX_CHANNELS)
                 val selectedChannels = shuffled.take(sampleSize)
-                SuggestionsResultsHolder.setChannelCount(selectedChannels.size)
+                maxProgress.set(selectedChannels.size)
+                SuggestionsResultsHolder.setChannelCounts(selectedChannels.size, allSubscriptions.size)
                 selectedChannels
+            }
+            .doOnNext {
+                broadcastProgress()
             }
             .flatMap { Flowable.fromIterable(it) }
             .takeWhile { !cancelSignal.get() }
@@ -256,7 +258,7 @@ class SuggestionsLoadManager(private val context: Context) {
         private const val BATCH_SIZE = 50
         private val DELAY_BETWEEN_BATCHES_MILLIS = (6000L..12000L)
 
-        const val MAX_CHANNELS = 50
+        const val MAX_CHANNELS = 20
         const val MAX_VIDEOS = 100
         private const val VIDEOS_PER_CHANNEL_MAX = 10
         private const val REQUEST_TIMEOUT_SECONDS = 10L

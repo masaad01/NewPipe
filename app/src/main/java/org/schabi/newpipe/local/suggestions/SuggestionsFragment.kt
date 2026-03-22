@@ -1,20 +1,6 @@
 /*
- * Copyright 2019 Mauricio Colli <mauriciocolli@outlook.com>
- * SuggestionsFragment.kt is part of NewPipe
- *
- * License: GPL-3.0+
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ * SPDX-FileCopyrightText: The NewPipe Contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 package org.schabi.newpipe.local.suggestions
@@ -28,6 +14,7 @@ import android.view.Menu
 import android.view.MenuInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
@@ -62,20 +49,16 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
 
     private lateinit var viewModel: SuggestionsViewModel
 
-    @JvmField
-    var listState: Parcelable? = null
+    private var listState: Parcelable? = null
 
     private lateinit var groupAdapter: GroupieAdapter
 
     private var isRefreshing = false
-    private var channelCount: Int = 0
+    private var selectedChannelCount: Int = 0
+    private var totalSubscriptionCount: Int = 0
 
     init {
         setHasOptionsMenu(true)
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -153,6 +136,7 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
         super.hideLoading()
         suggestionsBinding.itemsList.animate(true, 0)
         suggestionsBinding.refreshRootView.animate(true, 200)
+        suggestionsBinding.loadingChannelInfoText.animate(false, 0)
         suggestionsBinding.loadingProgressText.animate(false, 0)
         suggestionsBinding.swipeRefreshLayout.isRefreshing = false
         isRefreshing = false
@@ -162,6 +146,7 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
         super.showEmptyState()
         suggestionsBinding.itemsList.animateHideRecyclerViewAllowingScrolling()
         suggestionsBinding.refreshRootView.animate(true, 200)
+        suggestionsBinding.loadingChannelInfoText.animate(false, 0)
         suggestionsBinding.loadingProgressText.animate(false, 0)
         suggestionsBinding.swipeRefreshLayout.isRefreshing = false
         setEmptyStateMessage(R.string.no_channel_subscribed_yet)
@@ -182,6 +167,7 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
         super.handleError()
         suggestionsBinding.itemsList.animateHideRecyclerViewAllowingScrolling()
         suggestionsBinding.refreshRootView.animate(false, 0)
+        suggestionsBinding.loadingChannelInfoText.animate(false, 0)
         suggestionsBinding.loadingProgressText.animate(false, 0)
         suggestionsBinding.swipeRefreshLayout.isRefreshing = false
         isRefreshing = false
@@ -189,6 +175,17 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
 
     private fun handleProgressState(progressState: SuggestionsState.ProgressState) {
         showLoading()
+
+        if (progressState.selectedChannelCount > 0 && progressState.totalSubscriptionCount > 0) {
+            suggestionsBinding.loadingChannelInfoText.text = getString(
+                R.string.suggestions_channel_info,
+                progressState.selectedChannelCount,
+                progressState.totalSubscriptionCount
+            )
+            suggestionsBinding.loadingChannelInfoText.animate(true, 0)
+        } else {
+            suggestionsBinding.loadingChannelInfoText.animate(false, 0)
+        }
 
         val isIndeterminate = progressState.currentProgress == -1 &&
             progressState.maxProgress == -1
@@ -198,7 +195,7 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
         } else if (progressState.progressMessage > 0) {
             getString(progressState.progressMessage)
         } else {
-            "∞/∞"
+            getString(R.string.suggestions_progress_indeterminate)
         }
 
         suggestionsBinding.loadingProgressBar.isIndeterminate = isIndeterminate ||
@@ -241,7 +238,8 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
     }
 
     private fun handleLoadedState(loadedState: SuggestionsState.LoadedState) {
-        channelCount = loadedState.channelCount
+        selectedChannelCount = loadedState.selectedChannelCount
+        totalSubscriptionCount = loadedState.totalSubscriptionCount
 
         val itemVersion = when (getItemViewMode(requireContext())) {
             ItemViewMode.GRID -> StreamItem.ItemVersion.GRID
@@ -257,8 +255,6 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
             listState = null
         }
 
-        updateRefreshViewState()
-
         if (loadedState.items.isEmpty()) {
             showEmptyState()
         } else {
@@ -271,7 +267,7 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
             hideLoading()
             false
         } else {
-            showError(ErrorInfo(errorState.error, UserAction.REQUESTED_FEED, "Loading suggestions"))
+            showError(ErrorInfo(errorState.error, UserAction.REQUESTED_FEED, getString(R.string.suggestions_loading_progress)))
             true
         }
     }
@@ -286,13 +282,13 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
     }
 
     private fun updateRefreshViewState() {
-        suggestionsBinding.refreshText.text = getString(R.string.suggestions_refresh_info, channelCount)
+        suggestionsBinding.refreshText.text = getString(R.string.suggestions_refresh_info, selectedChannelCount, totalSubscriptionCount)
     }
 
     override fun doInitialLoadLogic() {}
 
     override fun reloadContent() {
-        activity?.startService(Intent(requireContext(), SuggestionsLoadService::class.java))
+        ContextCompat.startForegroundService(requireContext(), Intent(requireContext(), SuggestionsLoadService::class.java))
         listState = null
     }
 

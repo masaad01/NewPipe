@@ -37,17 +37,23 @@ class SuggestionsViewModel(
                 emptyList()
             }
 
-            val channelCount = if (event is SuccessResultEvent || event is IdleEvent) {
-                SuggestionsResultsHolder.getChannelCount()
+            val selectedChannelCount = if (event is SuccessResultEvent || event is IdleEvent) {
+                SuggestionsResultsHolder.getSelectedChannelCount()
             } else {
                 0
             }
 
-            Pair(event, Pair(loadedItems, channelCount))
+            val totalSubscriptionCount = if (event is SuccessResultEvent || event is IdleEvent) {
+                SuggestionsResultsHolder.getTotalSubscriptionCount()
+            } else {
+                0
+            }
+
+            Triple(event, Pair(loadedItems, selectedChannelCount), totalSubscriptionCount)
         }
         .observeOn(AndroidSchedulers.mainThread())
-        .subscribe { (event, data) ->
-            val (loadedItems, channelCount) = data
+        .subscribe { (event, data, totalSubscriptionCount) ->
+            val (loadedItems, selectedChannelCount) = data
             val items = loadedItems.map { streamInfoItem ->
                 StreamItem(
                     StreamWithState(StreamEntity(streamInfoItem), null)
@@ -55,9 +61,9 @@ class SuggestionsViewModel(
             }
             mutableStateLiveData.postValue(
                 when (event) {
-                    is IdleEvent -> SuggestionsState.LoadedState(items, channelCount)
-                    is ProgressEvent -> SuggestionsState.ProgressState(event.currentProgress, event.maxProgress, event.progressMessage)
-                    is SuccessResultEvent -> SuggestionsState.LoadedState(items, channelCount)
+                    is IdleEvent -> SuggestionsState.LoadedState(items, selectedChannelCount, totalSubscriptionCount)
+                    is ProgressEvent -> SuggestionsState.ProgressState(event.currentProgress, event.maxProgress, selectedChannelCount, totalSubscriptionCount, event.progressMessage)
+                    is SuccessResultEvent -> SuggestionsState.LoadedState(items, selectedChannelCount, totalSubscriptionCount)
                     is ErrorResultEvent -> SuggestionsState.ErrorState(event.error)
                 }
             )
