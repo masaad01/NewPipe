@@ -37,6 +37,7 @@
     <string name="tab_bookmarks">Bookmarked Playlists</string>
     <string name="tab_bookmarks_short">Playlists</string>
     <string name="tab_choose">Choose Tab</string>
+    <string name="tab_suggestions">Suggestions</string>
     <string name="controls_background_title">Background</string>
     <string name="controls_popup_title">Popup</string>
     <string name="controls_add_to_playlist_title">Add To</string>
@@ -713,6 +714,11 @@
     <string name="feed_groups_header_title">Channel groups</string>
     <string name="feed_oldest_subscription_update">Feed last updated: %s</string>
     <string name="feed_subscription_not_loaded_count">Not loaded: %d</string>
+    <string name="suggestions_refresh_info">Shuffled from %1$d out of %2$d channels</string>
+    <string name="suggestions_channel_info">Chose %1$d out of %2$d channels</string>
+    <string name="suggestions_loading_progress">Loading suggestions…</string>
+    <string name="suggestions_progress_indeterminate">∞/∞</string>
+    <string name="suggestions_notification_loading">Loading suggestions…</string>
     <string name="feed_notification_loading">Loading feed…</string>
     <string name="feed_processing_message">Processing feed…</string>
     <string name="feed_new_items">New feed items</string>

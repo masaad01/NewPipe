@@ -101,6 +101,10 @@
             android:foregroundServiceType="dataSync" />
 
         <service
+            android:name=".local.suggestions.SuggestionsLoadService"
+            android:foregroundServiceType="dataSync" />
+
+        <service
             android:name="androidx.work.impl.foreground.SystemForegroundService"
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
