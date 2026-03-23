@@ -142,7 +142,7 @@ class SuggestionsLoadService : Service() {
             .setSmallIcon(R.drawable.ic_newpipe_triangle_white)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(0, getString(R.string.cancel), cancelActionIntent)
-            .setContentTitle(getString(R.string.feed_notification_loading))
+            .setContentTitle(getString(R.string.suggestions_notification_loading))
     }
 
     private fun setupNotification() {

@@ -718,6 +718,7 @@
     <string name="suggestions_channel_info">Chose %1$d out of %2$d channels</string>
     <string name="suggestions_loading_progress">Loading suggestions…</string>
     <string name="suggestions_progress_indeterminate">∞/∞</string>
+    <string name="suggestions_notification_loading">Loading suggestions…</string>
     <string name="feed_notification_loading">Loading feed…</string>
     <string name="feed_processing_message">Processing feed…</string>
     <string name="feed_new_items">New feed items</string>
