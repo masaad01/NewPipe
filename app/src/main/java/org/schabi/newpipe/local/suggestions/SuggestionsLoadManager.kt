@@ -37,6 +37,7 @@ class SuggestionsLoadManager(private val context: Context) {
     }
 
     fun startLoading(): Single<List<StreamInfoItem>> {
+        SuggestionsResultsHolder.clear()
         val defaultSharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
         val youtubeExtractionCount = AtomicInteger()
 

@@ -19,6 +19,7 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.evernote.android.state.State
 import com.xwray.groupie.GroupieAdapter
 import com.xwray.groupie.Item
 import com.xwray.groupie.OnItemClickListener
@@ -49,7 +50,9 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
 
     private lateinit var viewModel: SuggestionsViewModel
 
-    private var listState: Parcelable? = null
+    @State
+    @JvmField
+    var listState: Parcelable? = null
 
     private lateinit var groupAdapter: GroupieAdapter
 
@@ -267,7 +270,7 @@ class SuggestionsFragment : BaseStateFragment<SuggestionsState>() {
             hideLoading()
             false
         } else {
-            showError(ErrorInfo(errorState.error, UserAction.REQUESTED_FEED, getString(R.string.suggestions_loading_progress)))
+            showError(ErrorInfo(errorState.error, UserAction.GET_SUGGESTIONS, getString(R.string.suggestions_loading_progress)))
             true
         }
     }
